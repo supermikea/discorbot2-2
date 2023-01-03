@@ -199,7 +199,7 @@ async def play(ctx, *, url, ytdl_obj=None):
                 vc_queue_method.start(ctx)
 
         except nextcord.errors.ClientException or not ctx.voice_client.is_playing():
-            await ctx.send(f"Alreay playing: {currently_playing}")
+            await ctx.send(f"Already playing: {currently_playing}")
             return 0
 
     else:
@@ -218,17 +218,33 @@ async def play(ctx, *, url, ytdl_obj=None):
 
 # stop playing audio
 @bot.command()
-async def stop(ctx):
+async def stop(ctx, called=False):
     global playing
+    if called:
+            called = True
+    else:
+        called = False
     try:
         await ctx.voice_client.stop()
     except:
         print("[DEBUGGING] stopped playing audio")
     playing = False
-    await ctx.reply("OK, stopped playing audio!")
+    if not called:
+        await ctx.reply("OK, stopped playing audio!")
 
-#async def skip(ctx):
-#
+@bot.command()
+async def skip(ctx):
+    global vc_queue, object_queue
+    await stop(context=ctx, called=True)
+
+    try:
+        await play(context=ctx, url=None, ytdl_obj=object_queue[1])
+        object_queue.pop(0)
+        vc_queue.pop(0)
+    except:
+        return 0
+    return 0
+
 
 @bot.command()
 async def pause(ctx):
@@ -272,6 +288,7 @@ async def vc_queue_method(ctx):
             return 0
     except RuntimeError:  # is expected (this is absolutely horrible)
         None
+        return 0
 
 
 # bot initiation code
