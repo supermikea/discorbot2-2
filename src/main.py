@@ -227,6 +227,8 @@ async def stop(ctx):
     playing = False
     await ctx.reply("OK, stopped playing audio!")
 
+#async def skip(ctx):
+#
 
 @bot.command()
 async def pause(ctx):
@@ -247,25 +249,29 @@ async def pause(ctx):
 async def queue(ctx):
     global vc_queue, currently_playing, object_queue
     titles = []
+    count = 0
     for i in vc_queue:
-        if i == currently_playing:
-            continue
-        titles.append(i)
+        titles.append(f"{i} at level: {count}")
+        count += 1
+    titles.pop(0)
     await ctx.reply(f"current queue:\n {titles}")
 
 
 @tasks.loop(seconds=1)  # task runs every 2 seconds
 async def vc_queue_method(ctx):
-    global object_queue, vc_queue
-    if not ctx.voice_client.is_playing():
-        try:
-            await play(context=ctx, url=None, ytdl_obj=object_queue[0])
-        except IndexError:
-            return 0
+    try:
+        global object_queue, vc_queue
+        if not ctx.voice_client.is_playing():
+            try:
+                await play(context=ctx, url=None, ytdl_obj=object_queue[0])
+            except IndexError:
+                return 0
 
-        object_queue.pop()
-        vc_queue.pop()
-        return 0
+            object_queue.pop(0)
+            vc_queue.pop(0)
+            return 0
+    except RuntimeError:  # is expected (this is absolutely horrible)
+        None
 
 
 # bot initiation code
