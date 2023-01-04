@@ -46,7 +46,7 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
 # class that mike does not understand YET
 class YTDLSource(nextcord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
+    def __init__(self, source, *, data, volume=1):
         super().__init__(source, volume)
 
         self.data = data
@@ -70,7 +70,7 @@ class YTDLSource(nextcord.PCMVolumeTransformer):
 @bot.event
 async def on_message(message):
     # debugging
-    print(f'[DEBUGGING] {message.author} sended {message.content}')
+    print(f'[DEBUGGING] {message.author} sent {message.content}')
 
     await bot.process_commands(message)
 
@@ -78,7 +78,7 @@ async def on_message(message):
 # signal that the bot is online
 @bot.event
 async def on_ready():
-    print(f"[INFO] started succesfully!")
+    print(f"[INFO] started successfully!")
     print(f"[INFO] Logged in as {bot.user} (ID: {bot.user.id})")
     print(f"[INFO] Activity is: {bot.activity}")
 
@@ -221,7 +221,7 @@ async def play(ctx, *, url, ytdl_obj=None):
 async def stop(ctx, called=False):
     global playing
     if called:
-            called = True
+        called = True
     else:
         called = False
     try:
@@ -232,6 +232,8 @@ async def stop(ctx, called=False):
     if not called:
         await ctx.reply("OK, stopped playing audio!")
 
+
+# skip function to the bot
 @bot.command()
 async def skip(ctx):
     global vc_queue, object_queue
@@ -241,6 +243,7 @@ async def skip(ctx):
         await play(context=ctx, url=None, ytdl_obj=object_queue[1])
         object_queue.pop(0)
         vc_queue.pop(0)
+        await ctx.reply("OK, skipped the song")
     except:
         return 0
     return 0
@@ -257,7 +260,7 @@ async def pause(ctx):
         try:
             await ctx.voice_client.pause()
         except:
-            print("[DEBUGGING] pausse playing audio")
+            print("[DEBUGGING] paused playing audio")
 
 
 # queue command
@@ -267,10 +270,10 @@ async def queue(ctx):
     titles = []
     count = 0
     for i in vc_queue:
-        titles.append(f"{i} at level: {count}")
+        titles.append(f"{i}\n")
         count += 1
     titles.pop(0)
-    await ctx.reply(f"current queue:\n {titles}")
+    await ctx.reply(f"current queue: {titles}")
 
 
 @tasks.loop(seconds=1)  # task runs every 2 seconds
@@ -300,9 +303,9 @@ def write_read_f(option, token, location):  # write or read token from token fil
         return 0
     # if option is not True then this is automatically executed
     file = open(sys.path[0] + location, "r")
-    token = file.read()
+    r_token = file.read()
     file.close()
-    return token
+    return r_token
 
 
 token = write_read_f("r", 0, "/token")
