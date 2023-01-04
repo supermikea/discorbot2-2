@@ -98,7 +98,6 @@ async def hello(ctx):
 
 
 # restart the bot
-# noinspection PyUnreachableCode
 @bot.command()
 async def restart(ctx):
     if str(ctx.author) == "supermikea#5051":
@@ -191,12 +190,15 @@ async def play(ctx, *, url, ytdl_obj=None):
             try:
                 try:
                     vc_queue_method.stop()
-                except:
+                except RuntimeError:
                     None
                 vc_queue_method.start(ctx)
-            except:
-                vc_queue_method.stop()
-                vc_queue_method.start(ctx)
+            except RuntimeError:
+                try:
+                    vc_queue_method.stop()
+                    vc_queue_method.start(ctx)
+                except RuntimeError:
+                    None
 
         except nextcord.errors.ClientException or not ctx.voice_client.is_playing():
             await ctx.send(f"Already playing: {currently_playing}")
@@ -219,6 +221,7 @@ async def play(ctx, *, url, ytdl_obj=None):
 # stop playing audio
 @bot.command()
 async def stop(ctx, called=False):
+    """STOPS playing ALL audio and clears queue"""
     global playing
     if called:
         called = True
@@ -239,13 +242,12 @@ async def skip(ctx):
     global vc_queue, object_queue
     await stop(context=ctx, called=True)
 
-    try:
-        await play(context=ctx, url=None, ytdl_obj=object_queue[1])
-        object_queue.pop(0)
-        vc_queue.pop(0)
-        await ctx.reply("OK, skipped the song")
-    except:
-        return 0
+
+    await play(context=ctx, url=None, ytdl_obj=object_queue[1])
+    object_queue.pop(0)
+    vc_queue.pop(0)
+    await ctx.reply("OK, skipped the song")
+
     return 0
 
 
@@ -273,6 +275,10 @@ async def queue(ctx):
         titles.append(f"{i}\n")
         count += 1
     titles.pop(0)
+
+    if str(ctx.author) == "supermikea#5051":
+        await ctx.reply(f"[DEBUG] {str(object_queue)}")
+
     await ctx.reply(f"current queue: {titles}")
 
 
@@ -289,8 +295,9 @@ async def vc_queue_method(ctx):
             object_queue.pop(0)
             vc_queue.pop(0)
             return 0
-    except RuntimeError:  # is expected (this is absolutely horrible)
+    except RuntimeError as e:  # is expected (this is absolutely horrible)
         None
+        ctx.send(f"```[DEBUG] ALERT @supermikea#5051 GOT A RuntimeError, (I`m sorry dude). But anyway here are the details:\n\n\n{e}```")
         return 0
 
 
